@@ -37,7 +37,7 @@ button{font:inherit;color:#fff;border:0;touch-action:none}
 <button id="jump" class="b">점프</button><button id="fire" class="b">발사</button>
 <div id="flash"></div><div id="dead">리스폰 중…</div>
 <div id="res"><h1 id="rt"></h1><div id="rsc"></div><div id="rme"></div><div id="rnx" style="opacity:.8"></div><button id="rb">메뉴로</button></div>
-<div id="ov"><h1>블록 데스매치 5v5</h1><p id="mst" style="font-weight:700;font-size:20px"></p><p id="info">연결 중…</p><p id="lnk" style="font-size:14px;word-break:break-all;opacity:.85;max-width:420px"></p><button id="go">게임 입장</button><p style="font-size:15px">⏱ 3분 경기 · 팀 전체 킬 수가 더 많은 팀이 승리<br>경기가 끝나면 결과가 나오고 자동으로 다음 경기가 시작돼요</p>
+<div id="ov"><h1>블록 데스매치 5v5</h1><p id="mst" style="font-weight:700;font-size:20px"></p><p id="info">연결 중…</p><p id="lnk" style="font-size:14px;word-break:break-all;opacity:.85;max-width:420px"></p><p id="dbg" style="font-size:13px;opacity:.7;max-width:420px">build 4 · 서버 연결 중…</p><button id="go">게임 입장</button><p style="font-size:15px">⏱ 3분 경기 · 팀 전체 킬 수가 더 많은 팀이 승리<br>경기가 끝나면 결과가 나오고 자동으로 다음 경기가 시작돼요</p>
 <p style="opacity:.7;font-size:14px">왼쪽 드래그: 이동 · 오른쪽 드래그: 시점 · 발사 버튼을 누른 채 드래그해도 조준돼요</p></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
@@ -54,13 +54,14 @@ const L=c=>new T.MeshLambertMaterial({color:c});
 const gr=new T.Mesh(new T.PlaneGeometry(92,92),L(0x6bbf59));gr.rotation.x=-Math.PI/2;sc.add(gr);
 [[-40,0xef4444],[40,0x3b82f6]].forEach(([z,c])=>{const p=new T.Mesh(new T.PlaneGeometry(92,12),L(c));p.rotation.x=-Math.PI/2;p.position.set(0,.02,z);sc.add(p)});
 const OB=[],obM=[];
-function box(x,z,w,d,h,c){const m=new T.Mesh(new T.BoxGeometry(w,h,d),L(c));m.position.set(x,h/2,z);sc.add(m);m.updateMatrixWorld();OB.push({x,z,w,d});obM.push(m)}
+function box(x,z,w,d,h,c){const m=new T.Mesh(new T.BoxGeometry(w,h,d),L(c));m.position.set(x,h/2,z);sc.add(m);m.updateMatrixWorld();OB.push({x,z,w,d,h});obM.push(m)}
 box(0,-46,94,2,5,0x888888);box(0,46,94,2,5,0x888888);box(-46,0,2,94,5,0x888888);box(46,0,2,94,5,0x888888);
 let sd=7;const rn=()=>(sd=sd*16807%2147483647)/2147483647;
 const cl=[0xd9a441,0x9b6b43,0x8a8fa3,0xc9c27a];
-for(let i=0;i<16;i++){const w=3+rn()*5,d=3+rn()*5,h=1.5+rn()*2.5,x=(rn()-.5)*70,z=(rn()-.5)*40;box(x,z,w,d,h,cl[i%4])}
+for(let i=0;i<16;i++){const w=3+rn()*5,d=3+rn()*5,h=i%4===0?1.4:2.4+rn()*2,x=(rn()-.5)*70,z=(rn()-.5)*40;box(x,z,w,d,h,cl[i%4])}
 function col(p){for(const o of OB){const hx=o.w/2+.5,hz=o.d/2+.5,dx=p.x-o.x,dz=p.z-o.z;
-if(Math.abs(dx)<hx&&Math.abs(dz)<hz){const px=hx-Math.abs(dx),pz=hz-Math.abs(dz);if(px<pz)p.x+=Math.sign(dx||1)*px;else p.z+=Math.sign(dz||1)*pz}}}
+if(p.y<o.h-.2&&Math.abs(dx)<hx&&Math.abs(dz)<hz){const px=hx-Math.abs(dx),pz=hz-Math.abs(dz);if(px<pz)p.x+=Math.sign(dx||1)*px;else p.z+=Math.sign(dz||1)*pz}}}
+function gh(p,y){let f=0;for(const o of OB)if(Math.abs(p.x-o.x)<o.w/2+.3&&Math.abs(p.z-o.z)<o.d/2+.3&&y>=o.h-.05)f=Math.max(f,o.h);return f}
 // 아바타
 function mkAv(tm,peer){const g=new T.Group(),c=tm?0x3b82f6:0xef4444;
 const add=(w,h,d,y,col,hd,x=0)=>{const b=new T.Mesh(new T.BoxGeometry(w,h,d),L(col));b.position.set(x,y,0);b.userData={peer,hd};g.add(b)};
@@ -80,14 +81,29 @@ $('rt').textContent=a>b?'🔴 빨강팀 승리!':b>a?'🔵 파랑팀 승리!':'�
 $('rme').textContent=`내 기록 K ${me.k} / D ${me.d} (${me.tm?'파랑':'빨강'}팀)`;$('rnx').textContent=`다음 경기까지 ${fmt(P.rem)}`}else r.style.display='none'}
 let room=null,myP='',jx=0,jy=0,firing=0,last=0;
 function spawn(){me.x=(Math.random()-.5)*60;me.z=me.tm?38:-38;me.yaw=me.tm?0:Math.PI;me.pit=0;me.y=0;me.vy=0;me.hp=100;me.al=1;$('dead').style.display='none'}
-const gun=new T.Mesh(new T.BoxGeometry(.2,.2,.9),L(0x222222));gun.position.set(.35,-.3,-.7);cam.add(gun);
+const gun=new T.Group();let kick=0;
+const gp=(g,c,x,y,z,rx)=>{const m=new T.Mesh(g,L(c));m.position.set(x,y,z);if(rx)m.rotation.x=rx;gun.add(m);return m};
+const bx=(w,h,d)=>new T.BoxGeometry(w,h,d);
+gp(bx(.12,.15,.5),0x2b2f36,0,0,-.05);            // 리시버
+gp(bx(.1,.09,.34),0x6b4a2b,0,-.01,-.45);          // 핸드가드(나무)
+gp(new T.CylinderGeometry(.022,.022,.5,8),0x15171a,0,.03,-.78,Math.PI/2);  // 총열
+gp(new T.CylinderGeometry(.034,.034,.1,8),0x15171a,0,.03,-1.03,Math.PI/2); // 소염기
+gp(bx(.07,.2,.1),0x1c1c1c,0,-.16,.08,.3);         // 손잡이
+gp(bx(.07,.24,.1),0x3d4047,0,-.18,-.2,-.25);      // 탄창
+gp(bx(.09,.14,.3),0x6b4a2b,0,-.02,.35);           // 개머리판
+gp(bx(.03,.06,.03),0x111111,0,.12,-.95);          // 가늠쇠
+gp(bx(.1,.03,.05),0x111111,0,.095,-.1);           // 가늠자
+const flash=gp(new T.SphereGeometry(.09,6,6),0xffd84a,0,.03,-1.12);flash.material=new T.MeshBasicMaterial({color:0xffd84a});flash.visible=false;
+gun.position.set(.3,-.28,-.55);cam.add(gun);
+const bul=[],BG=new T.CylinderGeometry(.03,.03,.9,5),BM=new T.MeshBasicMaterial({color:0xffe066});
 // 멀티플레이
 
 function mkRoom(){return new Promise(res=>{
-if(!window.Peer){res(null);return}
+const st=m=>{const e=document.getElementById('dbg');if(e)e.textContent='build 4 · '+m};
+if(!window.Peer){st('PeerJS를 불러오지 못했어요 (콘텐츠 차단기·네트워크 확인)');res(null);return}
 let code=(location.hash||'').slice(1).replace(/[^A-Za-z0-9]/g,'').slice(0,8).toUpperCase();
 if(!code){code=Math.random().toString(36).slice(2,6).toUpperCase();location.hash=code}
-const H={},conns={};let pres={},me=null,host=false,open=false,dirty=1,list=[],hc=null,done=0;
+const H={},conns={};let pres={},me=null,host=false,open=false,dirty=1,list=[],hc=null,done=0,tries=0;
 const fin=v=>{if(!done){done=1;res(v)}};
 const deliver=(f,t,d)=>(H[t]||[]).forEach(fn=>fn({peer:f,isMe:f===me,sameTab:f===me,topic:t,data:d}));
 const bc=m=>{for(const id in conns)try{conns[id].send(m)}catch(e){}};
@@ -97,24 +113,27 @@ on(t,f){(H[t]=H[t]||[]).push(f);return()=>{H[t]=H[t].filter(x=>x!==f)}},
 emit(t,d){if(host){deliver(me,t,d);bc({t:'ev',f:me,p:t,d})}else if(hc&&open)try{hc.send({t:'ev',p:t,d})}catch(e){}return Promise.resolve()},
 presence(p){merge(me,p);if(!host&&hc&&open)try{hc.send({t:'pr',p})}catch(e){}return Promise.resolve()},
 peers(){if(dirty){list=Object.keys(pres).map(id=>({peer:id,isMe:id===me,sameTab:id===me,presence:pres[id]}));dirty=0}return list}};
-setTimeout(()=>fin(null),12000);
-function join(){const p=new Peer();
-p.on('error',()=>{if(!open)fin(null)});
-p.on('open',id=>{me=id;pres[me]={};dirty=1;
+function retry(why){if(open||done)return;if(tries>=6){st('연결 실패: '+why);fin(null);return}st('재시도 중… ('+why+')');setTimeout(attempt,3000)}
+function join(){let to=null;const p=new Peer();
+p.on('error',e=>{if(!open){clearTimeout(to);try{p.destroy()}catch(x){}retry(e.type)}});
+p.on('open',id=>{me=id;pres={};pres[me]={};dirty=1;
 const c=hc=p.connect('fpsdm-'+code,{reliable:true,serialization:'json'});
-c.on('open',()=>{open=true;fin(R)});
+to=setTimeout(()=>{if(!open){try{p.destroy()}catch(x){}retry('방장 응답 없음')}},9000);
+c.on('open',()=>{clearTimeout(to);open=true;st('방에 접속했어요 · 코드 '+code);fin(R)});
 c.on('data',m=>{if(!m)return;if(m.t==='ev')deliver(m.f,m.p,m.d);else if(m.t==='ps'&&m.a){const mine=pres[me];pres=Object.assign({},m.a);pres[me]=mine;dirty=1}});
-c.on('close',()=>{open=false});c.on('error',()=>{open=false})})}
+c.on('close',()=>{open=false;st('연결이 끊겼어요 (방장이 나갔을 수 있어요)')});c.on('error',()=>{open=false})})}
+function attempt(){if(done)return;tries++;st('연결 시도 '+tries+'…');
 const pc=new Peer('fpsdm-'+code);
-pc.on('error',e=>{if(e.type==='unavailable-id'){try{pc.destroy()}catch(x){}join()}else if(!open)fin(null)});
-pc.on('open',id=>{me=id;host=true;open=true;pres[me]={};dirty=1;fin(R);
+pc.on('error',e=>{if(e.type==='unavailable-id'){try{pc.destroy()}catch(x){}join()}else if(!open){try{pc.destroy()}catch(x){}retry(e.type)}});
+pc.on('disconnected',()=>{try{pc.reconnect()}catch(x){}});
+pc.on('open',id=>{me=id;host=true;open=true;pres={};pres[me]={};dirty=1;st('방장으로 방을 만들었어요 · 코드 '+code);fin(R);
 setInterval(()=>bc({t:'ps',a:pres}),66)});
 pc.on('connection',c=>{
 const drop=()=>{if(conns[c.peer]){delete conns[c.peer];delete pres[c.peer];dirty=1}};
-c.on('open',()=>{if(Object.keys(conns).length>=9){c.close();return}conns[c.peer]=c;pres[c.peer]={};dirty=1});
+c.on('open',()=>{if(Object.keys(conns).length>=9){c.close();return}conns[c.peer]=c;pres[c.peer]={};dirty=1;st('방장 · 접속한 친구 '+Object.keys(conns).length+'명 · 코드 '+code)});
 c.on('data',m=>{if(!m||!conns[c.peer])return;if(m.t==='ev'&&typeof m.p==='string'){deliver(c.peer,m.p,m.d);bc({t:'ev',f:c.peer,p:m.p,d:m.d})}else if(m.t==='pr')merge(c.peer,m.p)});
-c.on('close',drop);c.on('error',drop)})
-})}
+c.on('close',drop);c.on('error',drop)})}
+attempt()})}
 (async()=>{try{room=await mkRoom()}catch(e){}
 if(!room){$('lnk').textContent='서버에 연결하지 못했어요';return}
 $('lnk').textContent='친구에게 이 주소를 그대로 보내세요: '+location.href;
@@ -127,7 +146,8 @@ if(d.k===myP&&!m.isMe&&P.pl)me.k++});
 const snd=(t,d)=>{if(room)room.emit(t,d).catch(()=>{})};
 function dmg(n,from){if(!P.pl)return;me.hp-=n;$('flash').style.opacity=.5;setTimeout(()=>$('flash').style.opacity=0,120);
 if(me.hp<=0&&me.al){me.hp=0;me.al=0;me.d++;snd('kill',{k:from});$('dead').style.display='flex';setTimeout(spawn,3000)}}
-function tracer(a,b){const l=new T.Line(new T.BufferGeometry().setFromPoints([new T.Vector3(...a),new T.Vector3(...b)]),new T.LineBasicMaterial({color:0xffee55}));sc.add(l);setTimeout(()=>{sc.remove(l);l.geometry.dispose()},70)}
+function tracer(a,b){const A=new T.Vector3(...a),d=new T.Vector3(...b).sub(A),L2=d.length();if(!(L2>.5))return;d.normalize();
+const m=new T.Mesh(BG,BM);m.position.copy(A);m.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),d);sc.add(m);bul.push({m,A,dir:d,L:L2,t:0})}
 const rc=new T.Raycaster();
 function fire(){const t=performance.now();if(t-last<170||!me.al||!me.started||!P.pl)return;last=t;
 const o=new T.Vector3(),d=new T.Vector3();cam.getWorldPosition(o);cam.getWorldDirection(d);rc.set(o,d);rc.far=120;
@@ -136,8 +156,8 @@ const en=Object.values(av).filter(a=>a.g.visible&&a.tm!==me.tm).map(a=>a.g);
 const h=rc.intersectObjects(en,true);let end=o.clone().addScaledVector(d,wd);
 if(h.length&&h[0].distance<wd){end=h[0].point;const u=h[0].object.userData;snd('hit',{to:u.peer,dm:u.hd?50:25});
 $('cross').className='h';setTimeout(()=>$('cross').className='',120)}
-const a=[o.x+d.z*.3,o.y-.3,o.z-d.x*.3].map(v=>+v.toFixed(2)),b=[end.x,end.y,end.z].map(v=>+v.toFixed(2));
-tracer(a,b);snd('shot',{a,b})}
+const a=[o.x+Math.cos(me.yaw)*.3+d.x*.9,o.y-.25+d.y*.9,o.z-Math.sin(me.yaw)*.3+d.z*.9].map(v=>+v.toFixed(2)),b=[end.x,end.y,end.z].map(v=>+v.toFixed(2));
+tracer(a,b);snd('shot',{a,b});kick=1;flash.visible=true;setTimeout(()=>flash.visible=false,50)}
 // 터치 조작
 const pad=$('pad');let st=null,lk=null;
 const look=(dx,dy)=>{me.yaw-=dx*.006;me.pit=Math.max(-1.3,Math.min(1.3,me.pit-dy*.006))};
@@ -153,7 +173,7 @@ const fb=$('fire');let fl=null;
 fb.addEventListener('pointerdown',e=>{e.preventDefault();firing=1;fl={id:e.pointerId,x:e.clientX,y:e.clientY}});
 fb.addEventListener('pointermove',e=>{if(fl&&e.pointerId===fl.id){look(e.clientX-fl.x,e.clientY-fl.y);fl.x=e.clientX;fl.y=e.clientY}});
 const fu=()=>{firing=0;fl=null};fb.addEventListener('pointerup',fu);fb.addEventListener('pointercancel',fu);
-$('jump').addEventListener('pointerdown',e=>{e.preventDefault();if(me.y<=0&&me.al)me.vy=11});
+$('jump').addEventListener('pointerdown',e=>{e.preventDefault();if(me.gr&&me.al)me.vy=11});
 document.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
 document.addEventListener('gesturestart',e=>e.preventDefault());
 $('go').onclick=()=>{const n=[0,0];if(room)for(const p of room.peers())if(!p.isMe&&p.presence.tm!==undefined)n[p.presence.tm]++;
@@ -161,18 +181,25 @@ if(n[0]+n[1]>=10){$('info').textContent='방이 가득 찼어요 (10/10)';return
 me.tm=n[0]<n[1]?0:n[1]<n[0]?1:(Math.random()<.5?0:1);me.started=1;me.k=me.d=0;me.c=P.c;spawn();$('ov').style.display='none';
 $('hud').style.color=me.tm?'#8ab8ff':'#ff9a9a'};
 $('rb').onclick=()=>{me.started=0;me.al=1;firing=0;$('res').style.display='none';$('ov').style.display='flex';if(room)room.presence({tm:null,al:null}).catch(()=>{})};
+const K={};
 // 루프
 let lt=performance.now(),ps=0,hu=0;
 function loop(t){requestAnimationFrame(loop);const dt=Math.min((t-lt)/1000,.05);lt=t;
 const peers=room?room.peers():[];
 P=ph();if(me.c!==P.c){me.c=P.c;me.k=me.d=0;if(me.started)spawn()}
 if(!myP){const m=peers.find(p=>p.sameTab);if(m)myP=m.peer}
-if(me.started&&me.al&&P.pl){const sy=Math.sin(me.yaw),cy=Math.cos(me.yaw),f=-jy,s=jx;
+if(me.started&&me.al&&P.pl){
+if(K.ArrowLeft)me.yaw+=1.0*dt;if(K.ArrowRight)me.yaw-=1.0*dt;
+if(K.ArrowUp)me.pit=Math.min(1.3,me.pit+.8*dt);if(K.ArrowDown)me.pit=Math.max(-1.3,me.pit-.8*dt);
+let f=-jy+(K.KeyW?1:0)-(K.KeyS?1:0),s=jx+(K.KeyD?1:0)-(K.KeyA?1:0);const l=Math.hypot(f,s);if(l>1){f/=l;s/=l}
+const sy=Math.sin(me.yaw),cy=Math.cos(me.yaw);
 me.x+=(-sy*f+cy*s)*9*dt;me.z+=(-cy*f-sy*s)*9*dt;col(me);
-me.vy-=30*dt;me.y+=me.vy*dt;if(me.y<0){me.y=0;me.vy=0}
-if(firing)fire()}
+const py=me.y;me.vy-=30*dt;me.y+=me.vy*dt;const gd=gh(me,Math.max(py,me.y));if(me.y<gd){me.y=gd;me.vy=0}me.gr=me.y<=gd+.001
+if(firing||K.KeyR)fire()}
 if(me.started){cam.position.set(me.x,me.y+1.8,me.z);cam.rotation.set(me.pit,me.yaw,0,'YXZ')}
 else{cam.position.set(0,22,58);cam.rotation.set(-.35,0,0,'YXZ')}
+kick=Math.max(0,kick-dt*7);gun.position.z=-.55+kick*.1;gun.rotation.x=kick*.1;
+for(let i=bul.length-1;i>=0;i--){const u=bul[i];u.t+=260*dt;if(u.t>=u.L){sc.remove(u.m);bul.splice(i,1)}else u.m.position.copy(u.A).addScaledVector(u.dir,u.t)}
 const seen={};
 for(const p of peers){const q=p.presence;if(p.isMe||q.tm===undefined)continue;seen[p.peer]=1;
 let a=av[p.peer];if(!a){a=av[p.peer]=mkAv(q.tm,p.peer);a.g.position.set(q.x,q.y,q.z);sc.add(a.g)}
